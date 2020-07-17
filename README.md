@@ -92,7 +92,7 @@ that will support the following capabilities.
 
 ## Roadmap
 
-After the 0.3.0 release we will start working on more complex operators, particularly joins, and using the TPCH
+After the 0.3.0 release we will start working on more complex operators, particularly joins, using the TPCH
 benchmarks to drive requirements. The full roadmap is available [here](https://github.com/ballista-compute/ballista/milestones?direction=asc&sort=title&state=open).
 
 ## More Examples
