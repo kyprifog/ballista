@@ -210,8 +210,9 @@ impl Scheduler {
                     exec.with_new_children(vec![child]),
                 ))))
             }
+            PhysicalPlan::CsvScan(_) => Ok(plan.clone()),
             PhysicalPlan::ParquetScan(_) => Ok(plan.clone()),
-            _ => unimplemented!(),
+            _ => Err(ballista_error("visit_plan unsupported operator")),
         }
     }
 }
