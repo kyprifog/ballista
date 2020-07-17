@@ -7,14 +7,17 @@
 ## Overview
 
 Ballista is a distributed compute platform primarily implemented in Rust, using Apache Arrow as the memory model. It is 
-built on an architecture that allows other programming languages to be supported as first-class citizens.
+built on an architecture that allows other programming languages to be supported as first-class citizens without paying
+a penalty for serialization costs.
 
 The foundational technologies in Ballista are:
 
-- **Apache Arrow** memory model and compute kernels for efficient processing of data.
-- **Apache Arrow Flight** protocol for efficient data transfer between processes.
-- **Google Protocol Buffers** for serializing query plans.
-- **Docker** for packaging up executors along with user-defined code.
+- [Apache Arrow](https://arrow.apache.org/) memory model and compute kernels for efficient processing of data.
+- [Apache Arrow Flight Protocol](https://arrow.apache.org/blog/2019/10/13/introducing-arrow-flight/) for efficient data transfer between processes.
+- [Google Protocol Buffers](https://developers.google.com/protocol-buffers) for serializing query plans.
+- [Docker](https://www.docker.com/) for packaging up executors along with user-defined code.
+
+Ballista can be deployed in [Kubernetes](https://kubernetes.io/), or as a standalone cluster using [etcd](https://etcd.io/) for discovery.
 
 ![Ballista Architecture Diagram](docs/ballista-architecture.png)
 
@@ -24,7 +27,8 @@ Ballista differs from Apache Spark in many ways.
 
 - Due to the use of Rust, memory usage can be up to 100x lower than Apache Spark which means that more processing can 
 fit on a single node, reducing the overhead of distributed compute.
-- Also, due to the use of Rust, there are no "cold start" overheads, and performance is blazing fast and consistent.
+- Also due to the use of Rust, there are no "cold start" overheads. The first run of a query can be up to 10x faster 
+than Apache Spark.
 - The use of Apache Arrow as the memory model and network protocol means that data can be exchanged between executors in
 any programming language with minimal serialization overhead.
 - Ballista is columnar rather than row-based, meaning that it can take advantage of vectorized processing both on the
@@ -73,6 +77,8 @@ that will support the following capabilities.
 - Boolean expressions (`AND`, `OR`, `NOT`)
 - Comparison expressions (`==`, `!=`, `<=`, `<`, `>`, `>=`)
 - Basic math expressions (`+`, `-`, `*`, `/`, `%`)
+- Rust user-defined functions (UDFs)
+- Java user-defined functions (UDFs)
 
 ### File Formats:
 
@@ -82,7 +88,7 @@ that will support the following capabilities.
 ## Roadmap
 
 After the 0.3.0 release we will start working on more complex operators, particularly joins, and using the TPCH
-benchmarks to drive requirements. The full roadmap is available [here](https://github.com/ballista-compute/ballista/milestones).
+benchmarks to drive requirements. The full roadmap is available [here](https://github.com/ballista-compute/ballista/milestones?direction=asc&sort=title&state=open).
 
 ## More Examples
 
@@ -93,8 +99,7 @@ The following examples should help illustrate the current capabilities of Ballis
 
 ## Documentation
 
-The [Ballista User Guide](https://ballistacompute.org/docs/) is hosted on the 
-[Ballista website](https://ballistacompute.org/), along with the [Ballista Blog](https://ballistacompute.org/) where 
+The [user guide](https://ballistacompute.org/docs/) is hosted at [https://ballistacompute.org](https://ballistacompute.org/), along with the [blog](https://ballistacompute.org/) where 
 news and release notes are posted.
 ## Contributing
 
