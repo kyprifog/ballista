@@ -14,7 +14,8 @@
 
 use std::collections::HashMap;
 use std::time::Instant;
-use std::env;
+
+use structopt::StructOpt;
 
 extern crate ballista;
 use ballista::arrow::util::pretty;
@@ -23,13 +24,26 @@ use ballista::datafusion::logicalplan::*;
 use ballista::error::Result;
 use ballista::BALLISTA_VERSION;
 
+#[derive(StructOpt, Debug)]
+#[structopt(name = "example")]
+struct Opt {
+    #[structopt()]
+    path: String,
+
+    #[structopt(short = "h", long = "host", default_value = "localhost")]
+    executor_host: String,
+
+    #[structopt(short = "p", long = "port", default_value = "50051")]
+    executor_port: usize
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let args: Vec<String> = env::args().collect();
-    let path = &args[1];
-    let executor_host = args.get(2).map_or_else(|| "localhost", |f| f.as_str());
-    let executor_port = args.get(3).map_or_else(|| 50051 , |f| f.as_str().parse::<usize>().unwrap());
+    let opt: Opt = Opt::from_args();
+    let path = opt.path.as_str();
+    let executor_host = opt.executor_host.as_str();
+    let executor_port = opt.executor_port;
 
     println!("Ballista v{} Distributed Query Example", BALLISTA_VERSION);
     println!("Path: {}", path);
