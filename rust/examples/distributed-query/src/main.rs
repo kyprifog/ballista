@@ -14,6 +14,7 @@
 
 use std::collections::HashMap;
 use std::time::Instant;
+use std::env;
 
 extern crate ballista;
 use ballista::arrow::util::pretty;
@@ -24,18 +25,21 @@ use ballista::BALLISTA_VERSION;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("Ballista v{} Distributed Query Example", BALLISTA_VERSION);
 
-    //TODO use command-line args
-    let nyc_taxi_path = "/mnt/nyctaxi/parquet/year=2019";
-    let executor_host = "localhost";
-    let executor_port = 50051;
+    let args: Vec<String> = env::args().collect();
+    let path = &args[1];
+    let executor_host = args.get(2).map_or_else(|| "localhost", |f| f.as_str());
+    let executor_port = args.get(3).map_or_else(|| 50051 , |f| f.as_str().parse::<usize>().unwrap());
+
+    println!("Ballista v{} Distributed Query Example", BALLISTA_VERSION);
+    println!("Path: {}", path);
+    println!("Host: {}:{}", executor_host, executor_port);
 
     let start = Instant::now();
     let ctx = Context::remote(executor_host, executor_port, HashMap::new());
 
     let results = ctx
-        .read_parquet(nyc_taxi_path, None)?
+        .read_parquet(path, None)?
         .aggregate(vec![col("passenger_count")], vec![max(col("fare_amount"))])?
         .collect()
         .await?;
