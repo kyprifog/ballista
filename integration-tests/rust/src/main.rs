@@ -17,13 +17,13 @@ use std::time::Instant;
 
 extern crate ballista;
 
-use ballista::arrow::array::{Float64Array, Int32Array};
 use ballista::arrow::datatypes::{DataType, Field, Schema};
 use ballista::arrow::util::pretty;
 use ballista::dataframe::{max, min, Context, CSV_BATCH_SIZE};
 pub use ballista::datafusion::datasource::csv::CsvReadOptions;
 use ballista::datafusion::logicalplan::*;
-use ballista::error::Result;
+use ballista::error::{Result};
+use ballista::error::BallistaError::General;
 use ballista::BALLISTA_VERSION;
 
 #[tokio::main]
@@ -77,11 +77,16 @@ async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<()
     );
     pretty::print_batches(&response)?;
 
-    // assertions
-    assert_eq!(1, response.len());
+    fn check(x: usize, y: usize) -> Result<()> {
+        if x == y { Ok(()) } else { Err(General(format!("{:?} not equal to {:?}", x, y)))}
+    }
+
+    let mut tests = Vec::new();
+
+    tests.push(check(1, response.len()));
     let batch = &response[0];
-    assert_eq!(3, batch.num_columns());
-    assert_eq!(10, batch.num_rows());
+    tests.push(check(3, batch.num_columns()));
+    tests.push(check(10, batch.num_rows()));
 
     println!("{:?}", &response[0].schema());
 
@@ -89,26 +94,20 @@ async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<()
     let min_fare_amt = batch.column(1);
     let max_fare_amt = batch.column(2);
 
-    assert_eq!(&DataType::Int32, passenger_count.data_type());
-    assert_eq!(&DataType::Float64, min_fare_amt.data_type());
-    assert_eq!(&DataType::Float64, max_fare_amt.data_type());
 
-    let _passenger_count = passenger_count
-        .as_any()
-        .downcast_ref::<Int32Array>()
-        .expect("column 0 incorrect data type");
-    let _min_fare = min_fare_amt
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("column 1 incorrect data type");
-    let _max_fare = max_fare_amt
-        .as_any()
-        .downcast_ref::<Float64Array>()
-        .expect("column 2 incorrect data type");
+    fn check_type(x: &DataType, y: DataType) -> Result<()> {
+        if x == &y {
+            Ok(())
+        } else {
+            Err(General(format!("{:?} not equal to {:?}", x, y)))
+        }
+    }
 
-    //TODO more assertions to compare the results from each target
+    tests.push(check_type(passenger_count.data_type(), DataType::Int32));
+    tests.push(check_type(min_fare_amt.data_type(), DataType::Float64));
+    tests.push(check_type(max_fare_amt.data_type(), DataType::Float64));
 
-    Ok(())
+    tests.into_iter().collect()
 }
 
 fn nyctaxi_schema() -> Schema {
