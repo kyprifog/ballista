@@ -17,16 +17,15 @@
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 
-use crate::error::{ballista_error, BallistaError};
-use crate::execution::physical_plan::Action;
-use crate::protobuf;
-
 use crate::arrow::datatypes::Schema;
 use crate::arrow::flight::flight_data_to_batch;
-
 use crate::arrow::record_batch::RecordBatch;
-use flight::flight_service_client::FlightServiceClient;
-use flight::Ticket;
+use crate::error::{ballista_error, BallistaError};
+use crate::execution::physical_plan::Action;
+use crate::flight::flight_service_client::FlightServiceClient;
+use crate::flight::Ticket;
+use crate::protobuf;
+
 use prost::Message;
 
 pub async fn execute_action(
@@ -37,11 +36,12 @@ pub async fn execute_action(
     //TODO need to avoid connecting per request
 
     let addr = format!("http://{}:{}", host, port);
-    println!("Connecting to flight server at {}", addr);
+
+    //println!("Connecting to flight server at {}", addr);
+
     let mut client = FlightServiceClient::connect(addr)
         .await
         .map_err(|e| BallistaError::General(format!("{:?}", e)))?;
-    println!("connected ok");
 
     let serialized_action: protobuf::Action = action.try_into()?;
     let mut buf: Vec<u8> = Vec::with_capacity(serialized_action.encoded_len());
