@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<()> {
+async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<String> {
     let start = Instant::now();
     let mut settings = HashMap::new();
     settings.insert(CSV_BATCH_SIZE, "1024");
@@ -77,16 +77,16 @@ async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<()
     );
     pretty::print_batches(&response)?;
 
-    fn check(x: usize, y: usize) -> Result<()> {
-        if x == y { Ok(()) } else { Err(General(format!("{:?} not equal to {:?}", x, y)))}
+    fn check(x: usize, y: usize, label: &str) -> Result<String> {
+        if x == y { Ok(format!("{} has correct count", label)) } else { Err(General(format!("{:?} not equal to {:?}", x, y)))}
     }
 
     let mut tests = Vec::new();
 
-    tests.push(check(1, response.len()));
+    tests.push(check(1, response.len(), "Length"));
     let batch = &response[0];
-    tests.push(check(3, batch.num_columns()));
-    tests.push(check(10, batch.num_rows()));
+    tests.push(check(3, batch.num_columns(), "Number of Columns"));
+    tests.push(check(10, batch.num_rows(), "Number of Rows"));
 
     println!("{:?}", &response[0].schema());
 
@@ -95,17 +95,17 @@ async fn execute(path: &str, host: &str, name: &&str, port: &usize) -> Result<()
     let max_fare_amt = batch.column(2);
 
 
-    fn check_type(x: &DataType, y: DataType) -> Result<()> {
+    fn check_type(x: &DataType, y: DataType, label: &str) -> Result<String> {
         if x == &y {
-            Ok(())
+            Ok(format!("Column {} has correct data type", label))
         } else {
             Err(General(format!("{:?} not equal to {:?}", x, y)))
         }
     }
 
-    tests.push(check_type(passenger_count.data_type(), DataType::Int32));
-    tests.push(check_type(min_fare_amt.data_type(), DataType::Float64));
-    tests.push(check_type(max_fare_amt.data_type(), DataType::Float64));
+    tests.push(check_type(passenger_count.data_type(), DataType::Int32, "passenger_count"));
+    tests.push(check_type(min_fare_amt.data_type(), DataType::Float64, "min_fare_amt"));
+    tests.push(check_type(max_fare_amt.data_type(), DataType::Float64, "max_fare_amt"));
 
     tests.into_iter().collect()
 }
