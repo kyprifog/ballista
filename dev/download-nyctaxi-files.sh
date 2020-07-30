@@ -1,13 +1,12 @@
 #!/bin/bash
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-01.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-02.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-03.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-04.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-05.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-06.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-07.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-08.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-09.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-10.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-11.csv
-wget https://s3.amazonaws.com/nyc-tlc/trip+data/yellow_tripdata_2019-12.csv
+
+if [ -z "$1" ] || [ -z "$2" ]
+then
+  echo "Download files <<Color: (yellow, green, fhv)>> <<Years: 2019,2020, etc (2009-2020)>>"
+else
+  for i in $(echo $2 | sed "s/,/ /g")
+  do
+    aws s3 cp --recursive --exclude="*" --include="$1_tripdata_$i*.csv" s3://nyc-tlc/trip\ data/ /mnt/nyctaxi/$1/year=$i/
+  done
+fi
+
