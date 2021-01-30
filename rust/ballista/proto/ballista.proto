@@ -270,6 +270,7 @@ message PhysicalPlanNode {
     HashAggregateExecNode hash_aggregate = 30;
     ShuffleReaderExecNode shuffle_reader = 40;
     SortExecNode sort = 50;
+    CoalesceBatchesExecNode coalesce_batches = 51;
   }
 }
 
@@ -331,6 +332,11 @@ message SortExecNode {
   repeated LogicalExprNode expr = 2;
 }
 
+message CoalesceBatchesExecNode {
+  PhysicalPlanNode input = 1;
+  uint32 target_batch_size = 2;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Ballista Scheduling
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -360,11 +366,10 @@ message Action {
 message ExecutePartition {
   string job_uuid = 1;
   uint32 stage_id = 2;
-  uint32 task_id = 3;
-  uint32 partition_id = 4;
-  PhysicalPlanNode plan = 5;
+  uint32 partition_id = 3;
+  PhysicalPlanNode plan = 4;
   // The task could need to read partitions from other executors
-  repeated PartitionLocation partition_location = 6;
+  repeated PartitionLocation partition_location = 5;
 }
 
 // Mapping from partition id to executor id
