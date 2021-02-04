@@ -21,15 +21,13 @@ use arrow_flight::flight_service_server::FlightServiceServer;
 use ballista::serde::protobuf::{
     scheduler_grpc_client::SchedulerGrpcClient, RegisterExecutorParams,
 };
-use ballista::BALLISTA_VERSION;
 use ballista::{
+    executor::flight_service::BallistaFlightService,
     executor::{BallistaExecutor, ExecutorConfig},
-    serde::scheduler::ExecutorMeta,
-};
-use ballista::{
-    flight_service::BallistaFlightService,
     scheduler::{standalone::StandaloneClient, SchedulerServer},
     serde::protobuf::scheduler_grpc_server::SchedulerGrpcServer,
+    serde::scheduler::ExecutorMeta,
+    BALLISTA_VERSION,
 };
 use log::info;
 use structopt::StructOpt;
