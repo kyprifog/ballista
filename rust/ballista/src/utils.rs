@@ -33,18 +33,22 @@ pub struct PartitionStats {
 }
 
 /// Stream data to disk in Arrow IPC format
+
 pub async fn write_stream_to_disk(
     stream: &mut SendableRecordBatchStream,
     path: &str,
 ) -> Result<PartitionStats> {
     let file = File::create(&path)?;
+
     let mut num_rows = 0;
     let mut num_batches = 0;
     let mut num_bytes = 0;
     let mut null_count = 0;
     let mut writer = FileWriter::try_new(file, stream.schema().as_ref())?;
+
     while let Some(result) = stream.next().await {
         let batch = result?;
+
         let batch_size_bytes: usize = batch
             .columns()
             .iter()

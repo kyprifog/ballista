@@ -33,6 +33,7 @@ pub mod shuffle_reader;
 static ALLOC: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
 
 #[derive(Debug, Clone)]
+
 pub struct ExecutorConfig {
     pub(crate) host: String,
     pub(crate) port: u16,

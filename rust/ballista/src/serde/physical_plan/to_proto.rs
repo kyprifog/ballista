@@ -16,8 +16,10 @@
 //! buffer format, allowing DataFusion physical plans to be serialized and transmitted between
 //! processes.
 
-use std::convert::{TryFrom, TryInto};
-use std::sync::Arc;
+use std::{
+    convert::{TryFrom, TryInto},
+    sync::Arc,
+};
 
 use crate::executor::shuffle_reader::ShuffleReaderExec;
 use crate::serde::{protobuf, BallistaError};
@@ -31,6 +33,7 @@ use datafusion::physical_plan::limit::{GlobalLimitExec, LocalLimitExec};
 use datafusion::physical_plan::parquet::ParquetExec;
 use datafusion::physical_plan::projection::ProjectionExec;
 use datafusion::physical_plan::sort::SortExec;
+
 use datafusion::physical_plan::{
     empty::EmptyExec,
     expressions::{BinaryExpr, Column},
@@ -45,6 +48,7 @@ impl TryInto<protobuf::PhysicalPlanNode> for Arc<dyn ExecutionPlan> {
 
     fn try_into(self) -> Result<protobuf::PhysicalPlanNode, Self::Error> {
         let plan = self.as_any();
+
         if let Some(exec) = plan.downcast_ref::<ProjectionExec>() {
             let input: protobuf::PhysicalPlanNode = exec.input().to_owned().try_into()?;
             let expr = exec
@@ -252,6 +256,7 @@ impl TryFrom<Arc<dyn PhysicalExpr>> for protobuf::LogicalExprNode {
 
     fn try_from(value: Arc<dyn PhysicalExpr>) -> Result<Self, Self::Error> {
         let expr = value.as_any();
+
         if let Some(expr) = expr.downcast_ref::<Column>() {
             Ok(protobuf::LogicalExprNode {
                 expr_type: Some(protobuf::logical_expr_node::ExprType::ColumnName(
@@ -264,6 +269,7 @@ impl TryFrom<Arc<dyn PhysicalExpr>> for protobuf::LogicalExprNode {
                 r: Some(Box::new(expr.right().to_owned().try_into()?)),
                 op: format!("{:?}", expr.op()),
             });
+
             Ok(protobuf::LogicalExprNode {
                 expr_type: Some(protobuf::logical_expr_node::ExprType::BinaryExpr(
                     binary_expr,

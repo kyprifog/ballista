@@ -145,6 +145,7 @@ async fn main() -> Result<()> {
         .context("Could not register executor")?;
     let executor = Arc::new(BallistaExecutor::new(config, scheduler));
     let service = BallistaFlightService::new(executor);
+
     let server = FlightServiceServer::new(service);
     info!(
         "Ballista v{} Rust Executor listening on {:?}",
