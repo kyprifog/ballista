@@ -14,11 +14,11 @@
 
 //! Distributed execution context.
 
-use std::any::Any;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::{any::Any, pin::Pin};
 
 use crate::client::BallistaClient;
 use crate::error::{BallistaError, Result};
@@ -26,14 +26,14 @@ use crate::serde::scheduler::{Action, ExecutorMeta};
 
 use crate::scheduler::planner::DistributedPlanner;
 use arrow::datatypes::SchemaRef;
-use datafusion::dataframe::DataFrame;
 use datafusion::datasource::datasource::Statistics;
 use datafusion::datasource::TableProvider;
 use datafusion::error::Result as DFResult;
 use datafusion::execution::context::ExecutionContext;
 use datafusion::logical_plan::{DFSchema, Expr, LogicalPlan, Partitioning};
 use datafusion::physical_plan::csv::CsvReadOptions;
-use datafusion::physical_plan::{ExecutionPlan, SendableRecordBatchStream};
+use datafusion::physical_plan::ExecutionPlan;
+use datafusion::{dataframe::DataFrame, physical_plan::RecordBatchStream};
 use log::{debug, info};
 
 #[derive(Debug)]
@@ -204,7 +204,7 @@ impl BallistaDataFrame {
         Self { state, df }
     }
 
-    pub async fn collect(&self) -> Result<SendableRecordBatchStream> {
+    pub async fn collect(&self) -> Result<Pin<Box<dyn RecordBatchStream + Send + Sync>>> {
         let (host, port) = {
             let state = self.state.lock().unwrap();
 

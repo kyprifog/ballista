@@ -14,8 +14,8 @@
 
 //! ShuffleReaderExec reads partitions that have already been materialized by an executor.
 
-use std::any::Any;
 use std::sync::Arc;
+use std::{any::Any, pin::Pin};
 
 use crate::client::BallistaClient;
 use crate::memory_stream::MemoryStream;
@@ -23,8 +23,11 @@ use crate::scheduler::planner::PartitionLocation;
 
 use arrow::datatypes::SchemaRef;
 use async_trait::async_trait;
-use datafusion::error::{DataFusionError, Result};
-use datafusion::physical_plan::{ExecutionPlan, Partitioning, SendableRecordBatchStream};
+use datafusion::physical_plan::{ExecutionPlan, Partitioning};
+use datafusion::{
+    error::{DataFusionError, Result},
+    physical_plan::RecordBatchStream,
+};
 use log::info;
 
 /// ShuffleReaderExec reads partitions that have already been materialized by an executor.
@@ -73,7 +76,10 @@ impl ExecutionPlan for ShuffleReaderExec {
         ))
     }
 
-    async fn execute(&self, partition: usize) -> Result<SendableRecordBatchStream> {
+    async fn execute(
+        &self,
+        partition: usize,
+    ) -> Result<Pin<Box<dyn RecordBatchStream + Send + Sync>>> {
         info!("ShuffleReaderExec::execute({})", partition);
         let partition_location = &self.partition_location[partition];
 

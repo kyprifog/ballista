@@ -17,13 +17,13 @@
 //! a query stage either forms the input of another query stage or can be the final result of
 //! a query.
 
-use std::any::Any;
 use std::sync::Arc;
+use std::{any::Any, pin::Pin};
 
 use arrow::datatypes::SchemaRef;
 use async_trait::async_trait;
-use datafusion::error::Result;
-use datafusion::physical_plan::{ExecutionPlan, Partitioning, SendableRecordBatchStream};
+use datafusion::physical_plan::{ExecutionPlan, Partitioning};
+use datafusion::{error::Result, physical_plan::RecordBatchStream};
 use uuid::Uuid;
 
 /// QueryStageExec represents a section of a query plan that has consistent partitioning and
@@ -81,7 +81,10 @@ impl ExecutionPlan for QueryStageExec {
         )?))
     }
 
-    async fn execute(&self, partition: usize) -> Result<SendableRecordBatchStream> {
+    async fn execute(
+        &self,
+        partition: usize,
+    ) -> Result<Pin<Box<dyn RecordBatchStream + Send + Sync>>> {
         self.child.execute(partition).await
     }
 }
