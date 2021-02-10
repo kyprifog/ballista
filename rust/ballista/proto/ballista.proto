@@ -44,13 +44,6 @@ message LogicalExprNode {
   }
 }
 
-
-
-
-
-
-
-
 message IsNull {
   LogicalExprNode expr = 1;
 }
@@ -366,13 +359,13 @@ message SelectionExecNode {
 enum AggregateMode {
   PARTIAL = 0;
   FINAL = 1;
-  COMPLETE = 2;
 }
 
 message HashAggregateExecNode {
   repeated LogicalExprNode group_expr = 1;
   repeated LogicalExprNode aggr_expr = 2;
   AggregateMode mode = 3;
+  PhysicalPlanNode input = 4;
 }
 
 message ShuffleReaderExecNode {
