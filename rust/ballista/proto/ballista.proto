@@ -464,7 +464,37 @@ message ExecuteQueryParams {
 }
 
 message ExecuteQueryResult {
+  string job_id = 1;
+}
+
+message GetJobStatusParams {
+  string job_id = 1;
+}
+
+message CompletedJob {
   repeated PartitionLocation partition_location = 1;
+}
+
+message QueuedJob {}
+
+// TODO: add progress report
+message RunningJob {}
+
+message FailedJob {
+  string error = 1;
+}
+
+message JobStatus {
+  oneof status {
+    QueuedJob queued = 1;
+    RunningJob running = 2;
+    FailedJob failed = 3;
+    CompletedJob completed = 4;
+  }
+}
+
+message GetJobStatusResult {
+  JobStatus status = 1;
 }
 
 service SchedulerGrpc {
@@ -473,6 +503,8 @@ service SchedulerGrpc {
   rpc RegisterExecutor (RegisterExecutorParams) returns (RegisterExecutorResult) {}
 
   rpc ExecuteLogicalPlan (ExecuteQueryParams) returns (ExecuteQueryResult) {}
+
+  rpc GetJobStatus (GetJobStatusParams) returns (GetJobStatusResult) {}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
