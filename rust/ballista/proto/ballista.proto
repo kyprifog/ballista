@@ -368,8 +368,9 @@ message HashAggregateExecNode {
   AggregateMode mode = 3;
   PhysicalPlanNode input = 4;
   repeated string group_expr_name = 5;
+  repeated string aggr_expr_name = 6;
   // we need the input schema to the partial aggregate to pass to the final aggregate
-  Schema input_schema = 6;
+  Schema input_schema = 7;
 }
 
 message ShuffleReaderExecNode {

@@ -150,6 +150,12 @@ impl TryInto<protobuf::PhysicalPlanNode> for Arc<dyn ExecutionPlan> {
                 .iter()
                 .map(|expr| expr.to_owned().try_into())
                 .collect::<Result<Vec<_>, BallistaError>>()?;
+            let agg_names = exec
+                .aggr_expr()
+                .iter()
+                .map(|expr| expr.field().unwrap().name().clone())
+                .collect();
+
             let agg_mode = match exec.mode() {
                 AggregateMode::Partial => protobuf::AggregateMode::Partial,
                 AggregateMode::Final => protobuf::AggregateMode::Final,
@@ -162,6 +168,7 @@ impl TryInto<protobuf::PhysicalPlanNode> for Arc<dyn ExecutionPlan> {
                         group_expr: groups,
                         group_expr_name: group_names,
                         aggr_expr: agg,
+                        aggr_expr_name: agg_names,
                         mode: agg_mode as i32,
                         input: Some(Box::new(input)),
                         input_schema: Some(input_schema.as_ref().into()),
