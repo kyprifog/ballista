@@ -14,22 +14,23 @@
 
 //! Implementation of the Apache Arrow Flight protocol that wraps an executor.
 
+use std::fs::File;
 use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Instant;
 
+use crate::error::BallistaError;
 use crate::executor::BallistaExecutor;
+use crate::memory_stream::MemoryStream;
 use crate::serde::decode_protobuf;
 use crate::serde::scheduler::Action as BallistaAction;
 use crate::utils::{self, format_plan};
 
-use crate::error::BallistaError;
-use crate::memory_stream::MemoryStream;
 use arrow::array::{ArrayRef, StringBuilder};
 use arrow::datatypes::{DataType, Field, Schema, SchemaRef};
-use arrow::error::ArrowError;
+use arrow::error::{ArrowError, Result as ArrowResult};
 use arrow::ipc::reader::FileReader;
 use arrow::ipc::writer::IpcWriteOptions;
 use arrow::record_batch::RecordBatch;
@@ -38,16 +39,20 @@ use arrow_flight::{
     FlightDescriptor, FlightInfo, HandshakeRequest, HandshakeResponse, PutResult, SchemaResult,
     Ticket,
 };
+use crossbeam::channel::{bounded, Receiver, RecvError, Sender};
 use datafusion::error::DataFusionError;
 use datafusion::physical_plan::RecordBatchStream;
 use futures::{Stream, StreamExt};
-use log::{debug, info};
-use std::fs::File;
+use log::{debug, info, warn};
+use std::io::{Read, Seek};
+use tokio::task;
 use tonic::{Request, Response, Status, Streaming};
+
+type FlightDataSender = Sender<Option<Result<FlightData, Status>>>;
+type FlightDataReceiver = Receiver<Option<Result<FlightData, Status>>>;
 
 /// Service implementing the Apache Arrow Flight Protocol
 #[derive(Clone)]
-
 pub struct BallistaFlightService {
     executor: Arc<BallistaExecutor>,
 }
@@ -157,8 +162,6 @@ impl FlightService for BallistaFlightService {
                 path.push("data.arrow");
                 let path = path.to_str().unwrap();
 
-                let options = arrow::ipc::writer::IpcWriteOptions::default();
-
                 info!("FetchPartition {:?} reading {}", partition_id, path);
                 let file = File::open(&path)
                     .map_err(|e| {
@@ -169,25 +172,20 @@ impl FlightService for BallistaFlightService {
                     })
                     .map_err(|e| from_ballista_err(&e))?;
                 let reader = FileReader::try_new(file).map_err(|e| from_arrow_err(&e))?;
-                let schema_flight_data = arrow_flight::utils::flight_data_from_arrow_schema(
-                    reader.schema().as_ref(),
-                    &options,
-                );
-                let mut flights: Vec<Result<FlightData, Status>> = vec![Ok(schema_flight_data)];
 
-                // TODO we should be able return a stream / iterator rather than load into memory first
-                // but we probably need to use channels because the Arrow IPC FileReader does not implement
-                // Sync + Send
-                for batch in reader {
-                    let mut batch_flight_data: Vec<_> = batch
-                        .map(|b| create_flight_iter(&b, &options).collect())
-                        .map_err(|e| from_arrow_err(&e))?;
-                    flights.append(&mut batch_flight_data);
-                }
-                info!("Loaded {} batches into memory", flights.len());
+                let (tx, rx): (FlightDataSender, FlightDataReceiver) = bounded(2);
 
-                let output = futures::stream::iter(flights);
-                Ok(Response::new(Box::pin(output) as Self::DoGetStream))
+                // Arrow IPC reader does not implement Sync + Send so we need to use a channel
+                // to communicate
+                task::spawn_blocking(move || {
+                    if let Err(e) = stream_flight_data(reader, tx) {
+                        warn!("Error streaming results: {:?}", e);
+                    }
+                });
+
+                Ok(Response::new(
+                    Box::pin(FlightDataStream::new(rx)) as Self::DoGetStream
+                ))
             }
         }
     }
@@ -273,6 +271,57 @@ fn create_flight_iter(
             .chain(std::iter::once(flight_batch))
             .map(Ok),
     )
+}
+
+fn stream_flight_data<T>(reader: FileReader<T>, tx: FlightDataSender) -> Result<(), Status>
+where
+    T: Read + Seek,
+{
+    let options = arrow::ipc::writer::IpcWriteOptions::default();
+    let schema_flight_data =
+        arrow_flight::utils::flight_data_from_arrow_schema(reader.schema().as_ref(), &options);
+    send_response(&tx, Some(Ok(schema_flight_data)))?;
+
+    for batch in reader {
+        let batch_flight_data: Vec<_> = batch
+            .map(|b| create_flight_iter(&b, &options).collect())
+            .map_err(|e| from_arrow_err(&e))?;
+        for batch in &batch_flight_data {
+            send_response(&tx, Some(batch.clone()))?;
+        }
+    }
+    send_response(&tx, None)?;
+    Ok(())
+}
+
+fn send_response(
+    tx: &FlightDataSender,
+    data: Option<Result<FlightData, Status>>,
+) -> Result<(), Status> {
+    tx.send(data)
+        .map_err(|e| Status::internal(format!("{:?}", e)))
+}
+
+struct FlightDataStream {
+    response_rx: FlightDataReceiver,
+}
+
+impl FlightDataStream {
+    fn new(response_rx: FlightDataReceiver) -> Self {
+        Self { response_rx }
+    }
+}
+
+impl Stream for FlightDataStream {
+    type Item = Result<FlightData, Status>;
+
+    fn poll_next(self: std::pin::Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.response_rx.recv() {
+            Ok(maybe_batch) => Poll::Ready(maybe_batch),
+            // RecvError means receiver has exited and closed the channel
+            Err(RecvError) => Poll::Ready(None),
+        }
+    }
 }
 
 fn from_arrow_err(e: &ArrowError) -> Status {
