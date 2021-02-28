@@ -30,7 +30,7 @@ impl TryInto<Action> for protobuf::Action {
         match self.action_type {
             Some(ActionType::ExecutePartition(partition)) => {
                 Ok(Action::ExecutePartition(ExecutePartition::new(
-                    parse_job_uuid(&partition.job_uuid)?,
+                    partition.job_id,
                     partition.stage_id as usize,
                     partition.partition_id.iter().map(|n| *n as usize).collect(),
                     partition
@@ -60,7 +60,7 @@ impl TryInto<PartitionId> for protobuf::PartitionId {
 
     fn try_into(self) -> Result<PartitionId, Self::Error> {
         Ok(PartitionId::new(
-            parse_job_uuid(&self.job_uuid)?,
+            &self.job_id,
             self.stage_id as usize,
             self.partition_id as usize,
         ))
@@ -89,16 +89,5 @@ impl TryInto<PartitionLocation> for protobuf::PartitionLocation {
                 })?
                 .into(),
         })
-    }
-}
-
-fn parse_job_uuid(job_uuid: &str) -> Result<Uuid, BallistaError> {
-    if let Ok(parsed_uuid) = Uuid::parse_str(&job_uuid) {
-        Ok(parsed_uuid)
-    } else {
-        Err(BallistaError::General(format!(
-            "Invalid job_uuid {}",
-            job_uuid
-        )))
     }
 }

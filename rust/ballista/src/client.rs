@@ -38,6 +38,7 @@ use prost::Message;
 use uuid::Uuid;
 
 /// Client for interacting with Ballista executors.
+#[derive(Clone)]
 pub struct BallistaClient {
     flight_client: FlightServiceClient<tonic::transport::channel::Channel>,
 }
@@ -65,13 +66,13 @@ impl BallistaClient {
     /// Execute one partition of a physical query plan against the executor
     pub async fn execute_partition(
         &mut self,
-        job_uuid: Uuid,
+        job_id: String,
         stage_id: usize,
         partition_id: Vec<usize>,
         plan: Arc<dyn ExecutionPlan>,
     ) -> Result<Vec<ExecutePartitionResult>> {
         let action = Action::ExecutePartition(ExecutePartition {
-            job_uuid,
+            job_id,
             stage_id,
             partition_id,
             plan,
@@ -112,15 +113,11 @@ impl BallistaClient {
     /// Fetch a partition from an executor
     pub async fn fetch_partition(
         &mut self,
-        job_uuid: &Uuid,
+        job_id: &str,
         stage_id: usize,
         partition_id: usize,
     ) -> Result<SendableRecordBatchStream> {
-        let action = Action::FetchPartition(PartitionId::new(
-            job_uuid.to_owned(),
-            stage_id,
-            partition_id,
-        ));
+        let action = Action::FetchPartition(PartitionId::new(job_id, stage_id, partition_id));
         self.execute_action(&action).await
     }
 

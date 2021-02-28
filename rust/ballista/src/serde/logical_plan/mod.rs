@@ -81,7 +81,7 @@ mod roundtrip_tests {
             )
             .and_then(|plan| plan.sort(&[col("salary")]))
             .and_then(|plan| plan.build())
-            .map_err(|e| BallistaError::DataFusionError(e))?,
+            .map_err(BallistaError::DataFusionError)?,
         );
 
         for batch_size in test_batch_sizes.iter() {
@@ -673,7 +673,7 @@ mod roundtrip_tests {
         .and_then(|plan| plan.sort(&[col("salary")]))
         .and_then(|plan| plan.explain(true))
         .and_then(|plan| plan.build())
-        .map_err(|e| BallistaError::DataFusionError(e))?;
+        .map_err(BallistaError::DataFusionError)?;
 
         let plan = LogicalPlanBuilder::scan_csv(
             "employee.csv",
@@ -683,7 +683,7 @@ mod roundtrip_tests {
         .and_then(|plan| plan.sort(&[col("salary")]))
         .and_then(|plan| plan.explain(false))
         .and_then(|plan| plan.build())
-        .map_err(|e| BallistaError::DataFusionError(e))?;
+        .map_err(BallistaError::DataFusionError)?;
 
         roundtrip_test!(plan);
 
@@ -704,7 +704,7 @@ mod roundtrip_tests {
 
         let scan_plan = LogicalPlanBuilder::empty(false)
             .build()
-            .map_err(|e| BallistaError::DataFusionError(e))?;
+            .map_err(BallistaError::DataFusionError)?;
         let plan = LogicalPlanBuilder::scan_csv(
             "employee.csv",
             CsvReadOptions::new().schema(&schema).has_header(true),
@@ -712,7 +712,7 @@ mod roundtrip_tests {
         )
         .and_then(|plan| plan.join(&scan_plan, JoinType::Inner, &["id"], &["id"]))
         .and_then(|plan| plan.build())
-        .map_err(|e| BallistaError::DataFusionError(e))?;
+        .map_err(BallistaError::DataFusionError)?;
 
         roundtrip_test!(plan);
         Ok(())
@@ -735,7 +735,7 @@ mod roundtrip_tests {
         )
         .and_then(|plan| plan.sort(&[col("salary")]))
         .and_then(|plan| plan.build())
-        .map_err(|e| BallistaError::DataFusionError(e))?;
+        .map_err(BallistaError::DataFusionError)?;
         roundtrip_test!(plan);
 
         Ok(())
@@ -746,13 +746,13 @@ mod roundtrip_tests {
     fn roundtrip_empty_relation() -> Result<()> {
         let plan_false = LogicalPlanBuilder::empty(false)
             .build()
-            .map_err(|e| BallistaError::DataFusionError(e))?;
+            .map_err(BallistaError::DataFusionError)?;
 
         roundtrip_test!(plan_false);
 
         let plan_true = LogicalPlanBuilder::empty(true)
             .build()
-            .map_err(|e| BallistaError::DataFusionError(e))?;
+            .map_err(BallistaError::DataFusionError)?;
 
         roundtrip_test!(plan_true);
 
@@ -777,7 +777,7 @@ mod roundtrip_tests {
         )
         .and_then(|plan| plan.aggregate(&[col("state")], &[max(col("salary"))]))
         .and_then(|plan| plan.build())
-        .map_err(|e| BallistaError::DataFusionError(e))?;
+        .map_err(BallistaError::DataFusionError)?;
 
         roundtrip_test!(plan);
 

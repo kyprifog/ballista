@@ -68,7 +68,6 @@ impl BallistaFlightService {
 type BoxedFlightStream<T> = Pin<Box<dyn Stream<Item = Result<T, Status>> + Send + Sync + 'static>>;
 
 #[tonic::async_trait]
-
 impl FlightService for BallistaFlightService {
     type DoActionStream = BoxedFlightStream<arrow_flight::Result>;
     type DoExchangeStream = BoxedFlightStream<FlightData>;
@@ -91,7 +90,7 @@ impl FlightService for BallistaFlightService {
             BallistaAction::ExecutePartition(partition) => {
                 info!(
                     "ExecutePartition: job={}, stage={}, partition={:?}\n{}",
-                    partition.job_uuid,
+                    partition.job_id,
                     partition.stage_id,
                     partition.partition_id,
                     format_plan(partition.plan.as_ref(), 0).map_err(|e| from_ballista_err(&e))?
@@ -103,7 +102,7 @@ impl FlightService for BallistaFlightService {
                     let partition = partition.clone();
                     tasks.push(tokio::spawn(async move {
                         let mut path = PathBuf::from(&work_dir);
-                        path.push(&format!("{}", partition.job_uuid));
+                        path.push(partition.job_id);
                         path.push(&format!("{}", partition.stage_id));
                         path.push(&format!("{}", part));
                         std::fs::create_dir_all(&path)?;
@@ -196,7 +195,7 @@ impl FlightService for BallistaFlightService {
                 info!("FetchPartition {:?}", partition_id);
 
                 let mut path = PathBuf::from(&self.executor.config.work_dir);
-                path.push(&format!("{}", partition_id.job_uuid));
+                path.push(&partition_id.job_id);
                 path.push(&format!("{}", partition_id.stage_id));
                 path.push(&format!("{}", partition_id.partition_id));
                 path.push("data.arrow");

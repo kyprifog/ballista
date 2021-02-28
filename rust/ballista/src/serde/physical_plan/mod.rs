@@ -145,7 +145,7 @@ mod roundtrip_tests {
         use arrow::datatypes::{DataType, Field, Schema};
         let field_a = Field::new("a", DataType::Boolean, false);
         let field_b = Field::new("b", DataType::Int64, false);
-        let schema = Arc::new(Schema::new(vec![field_a.clone(), field_b.clone()]));
+        let schema = Arc::new(Schema::new(vec![field_a, field_b]));
         let sort_exprs = vec![
             PhysicalSortExpr {
                 expr: col("a"),
@@ -164,7 +164,7 @@ mod roundtrip_tests {
         ];
         roundtrip_test(Arc::new(SortExec::try_new(
             sort_exprs,
-            Arc::new(EmptyExec::new(false, schema.clone())),
+            Arc::new(EmptyExec::new(false, schema)),
         )?))
     }
 }
