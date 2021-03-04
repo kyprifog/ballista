@@ -21,7 +21,7 @@ RUN apt-get -y install cmake
 ENV FORCE_REBUILD='true'
 ARG EXECUTOR_BUILD_FEATURES='--features snmalloc'
 WORKDIR /tmp/ballista/executor
-RUN cargo build $RELEASE_FLAG $EXECUTOR_BUILD_FEATURES 
+RUN cargo build $RELEASE_FLAG $EXECUTOR_BUILD_FEATURES
 WORKDIR /tmp/ballista
 RUN cargo build $RELEASE_FLAG
 

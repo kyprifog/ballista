@@ -6,3 +6,7 @@ members = [
     "scheduler",
     "benchmarks/tpch",
 ]
+
+[profile.release]
+lto = true
+codegen-units = 1
