@@ -31,6 +31,7 @@ use super::planner::remove_unresolved_shuffles;
 mod etcd;
 mod standalone;
 
+use ballista_core::serde::scheduler::PartitionStats;
 pub use etcd::EtcdClient;
 pub use standalone::StandaloneClient;
 
@@ -232,6 +233,7 @@ impl SchedulerState {
                                             .find(|exec| exec.id == executor_id)
                                             .unwrap()
                                             .clone(),
+                                        partition_stats: PartitionStats::default(),
                                     },
                                 );
                             } else {
@@ -325,6 +327,7 @@ impl SchedulerState {
                     .map(|(status, execution_id)| PartitionLocation {
                         partition_id: status.partition_id.to_owned(),
                         executor_meta: executors.get(execution_id).map(|e| e.clone().into()),
+                        partition_stats: None,
                     })
                     .collect();
                 job_status::Status::Completed(CompletedJob { partition_location })

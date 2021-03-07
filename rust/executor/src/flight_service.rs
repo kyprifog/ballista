@@ -23,8 +23,8 @@ use std::time::Instant;
 use crate::BallistaExecutor;
 use ballista_core::error::BallistaError;
 use ballista_core::serde::decode_protobuf;
-use ballista_core::serde::scheduler::Action as BallistaAction;
-use ballista_core::utils::{self, format_plan, PartitionStats};
+use ballista_core::serde::scheduler::{Action as BallistaAction, PartitionStats};
+use ballista_core::utils::{self, format_plan};
 
 use arrow::array::{ArrayRef, StringBuilder};
 use arrow::datatypes::{DataType, Field, Schema};
@@ -145,7 +145,7 @@ impl FlightService for BallistaFlightService {
                         c0.append_value(&path).unwrap();
                         let path: ArrayRef = Arc::new(c0.finish());
 
-                        let stats: ArrayRef = stats.to_arrow_arrayref();
+                        let stats: ArrayRef = stats.to_arrow_arrayref()?;
                         let results =
                             vec![RecordBatch::try_new(schema, vec![path, stats]).unwrap()];
 

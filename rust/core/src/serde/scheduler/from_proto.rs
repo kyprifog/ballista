@@ -17,7 +17,9 @@ use std::{collections::HashMap, convert::TryInto};
 use crate::error::BallistaError;
 use crate::serde::protobuf;
 use crate::serde::protobuf::action::ActionType;
-use crate::serde::scheduler::{Action, ExecutePartition, PartitionId, PartitionLocation};
+use crate::serde::scheduler::{
+    Action, ExecutePartition, PartitionId, PartitionLocation, PartitionStats,
+};
 
 use datafusion::logical_plan::LogicalPlan;
 use uuid::Uuid;
@@ -66,6 +68,24 @@ impl TryInto<PartitionId> for protobuf::PartitionId {
     }
 }
 
+impl Into<PartitionStats> for protobuf::PartitionStats {
+    fn into(self) -> PartitionStats {
+        PartitionStats::new(
+            foo(self.num_rows),
+            foo(self.num_batches),
+            foo(self.num_bytes),
+        )
+    }
+}
+
+fn foo(n: i64) -> Option<u64> {
+    if n < 0 {
+        None
+    } else {
+        Some(n as u64)
+    }
+}
+
 impl TryInto<PartitionLocation> for protobuf::PartitionLocation {
     type Error = BallistaError;
 
@@ -84,6 +104,14 @@ impl TryInto<PartitionLocation> for protobuf::PartitionLocation {
                 .ok_or_else(|| {
                     BallistaError::General(
                         "executor_meta in PartitionLocation is missing".to_owned(),
+                    )
+                })?
+                .into(),
+            partition_stats: self
+                .partition_stats
+                .ok_or_else(|| {
+                    BallistaError::General(
+                        "partition_stats in PartitionLocation is missing".to_owned(),
                     )
                 })?
                 .into(),
