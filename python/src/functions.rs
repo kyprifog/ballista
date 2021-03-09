@@ -63,11 +63,10 @@ pub fn count_distinct(expr: BPyExpr) -> BPyExpr {
     }
 }
 
-#[pyfunction(expr = "*")]
-pub fn concat(expr: &PyTuple) -> PyResult<BPyExpr> {
-    let expressions: Vec<Expr> = util::transform_tuple_to_uniform_type(expr, |e: BPyExpr| e.expr)?;
+#[pyfunction(expr)]
+pub fn concat(expr: BPyExpr) -> PyResult<BPyExpr> {
     Ok(BPyExpr {
-        expr: logical_plan::concat(expressions),
+        expr: logical_plan::concat(expr.expr),
     })
 }
 
