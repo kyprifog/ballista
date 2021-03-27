@@ -4,3 +4,5 @@ build
 target
 default.etcd
 venv
+*.direnv/
+*.envrc
