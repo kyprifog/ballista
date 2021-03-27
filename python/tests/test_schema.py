@@ -20,6 +20,7 @@ class TestSchema(unittest.TestCase):
     
     def test_fields(self):
         fields = [
+            Field("test_column_0", "str", False),
             Field("test_column_1", "i16", False),
             Field("test_column_2", "i32", False),
             Field("test_column_3", "f32", False),
@@ -31,8 +32,8 @@ class TestSchema(unittest.TestCase):
         schema = ballista.Schema(*fields)
         schema_json = json.loads(schema.to_json()).get("fields")
         types = list(map(lambda f: f.get("data_type"), schema_json))
-        expect = ["Int16", "Int32", "Float32", "Float64", "Boolean", "Date32", "Date64"]
-        assert(types == expect)
+        expect = ["Utf8", "Int16", "Int32", "Float32", "Float64", "Boolean", "Date32", "Date64"]
+        self.assertEqual(types, expect)
 
 if __name__ == '__main__':
     unittest.main()
